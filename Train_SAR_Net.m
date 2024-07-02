@@ -363,13 +363,13 @@ end
 %% Forward Model
 function [ImgConv,ImgFRef,g] = ForwardModelPE(ImgRef,nH,nHH,opts)
 ImgFRef_Rescale = RescaleDataSet(ImgRef,ImgRef,opts.RescaleFlag);
-ImgFRef = addphase(ImgFRef_Rescale);                                            % Adding complex valued uniform Random phase to magnitude of RF
+ImgFRef = addphase(ImgFRef_Rescale);                                       % Adding complex valued uniform Random phase to magnitude of RF
 g = nH(ImgFRef);                                                           % Clean and full DAL Phase histories (PH)
 optsNoise.type = opts.type;                                                % Noise distribution type
 optsNoise.NoiseSigma = opts.NoiseSigma;                                    % Setting NL to option
 optsNoise.PhaseType = opts.PhaseType;                                      % "UniformRandom","GausRandom","Sine","Poly"
-gn = AddNoise(g,optsNoise);                                                 % Add Noise to PH
-f_conv = reshape(nHH(gn),opts.N1,opts.N2);                                  % Conventional Reconstruction (CR)
+gn = AddNoise(g,optsNoise);                                                % Add Noise to PH
+f_conv = reshape(nHH(gn),opts.N1,opts.N2);                                 % Conventional Reconstruction (CR)
 f_conv_abs = abs(f_conv);
 f_conv_ang = atan2(imag(f_conv),real(f_conv));
 f_conv_abs_resc = RescaleDataSet(f_conv_abs,ImgFRef_Rescale,opts.RescaleFlag);
@@ -2056,7 +2056,6 @@ LayerNameOut = [add_layer_1.Name,'/',add_layer_1.OutputNames{1}];
 end
 %% H Residual Dense
 function [lgraph,LayerNameOut] = H_RD(lgraph,LayerNameIn,Type,Siffix,NumFiltIn,NumFiltOut)
-function [lgraph,LayerNameOut] = H_RD(lgraph,LayerNameIn,Type,Siffix,NumFiltIn,NumFiltOut)
 bnFlag=0;reluFlag=0;
 FilterSize=3;Siffix_layer = ['RD_MOD_',Siffix];
 % NumFiltIn=64;
@@ -2210,8 +2209,48 @@ layer = [layer_conv;layer_bn;layer_relu];
 end
 
 % ------------------------------------------------------------------------
-
-
+%% rotate Image according to theta and convert to patches
+function imgOut = rotate2patch(Img,BlkSize,Angle_Img,opt)
+%% imgOut = rotate2patch(Img,BlkSize,Angle_Img,opt)
+% Convert to patch and also rotate
+% opt.BlkStepRow : Requirment of block size in row
+% opt.BlkStepCol : Requirment of block size in column
+% BlkSize : Requirment of block size
+% Img :  Input image
+% Angle_Img : 
+if isempty(BlkSize)
+    imgOut = Img;
+    disp('No rotation applied')
+else
+    imgOut = zeros([BlkSize(1)*BlkSize(2),50e3],"double");
+    kk = 1;
+    [rows_Img, colm_Img] = size(Img);
+    if isempty(opt.BlkStepRow)||isempty(opt.BlkStepCol)
+        row_step = ceil(BlkSize(1)/10);
+        col_step = ceil(BlkSize(2)/10);
+    else
+        row_step = opt.BlkStepRow;
+        col_step = opt.BlkStepCol;
+    end
+    
+    for ii = 1:row_step:rows_Img-ceil(BlkSize(1)*(1+sind(mod(Angle_Img,180))))
+        for jj = 1:col_step:colm_Img-ceil(BlkSize(2)*(1+sind(mod(Angle_Img,180))))
+            im_sub = Img(ii:ii+ceil(BlkSize(1)*(1+sind(mod(Angle_Img,180))))-1,...
+                jj:jj+ceil(BlkSize(2)*(1+sind(mod(Angle_Img,180))))-1);
+            im_sub_Th = imrotate(im_sub,Angle_Img,"bicubic","loose");
+            [row_th,col_th] = size(im_sub_Th);
+            row_st = floor(row_th/2)-floor(BlkSize(1)/2)+1;
+            col_st = floor(col_th/2)-floor(BlkSize(2)/2)+1;
+            im_sub_Theta = ...
+                im_sub_Th(row_st:row_st+BlkSize(1)-1,...
+                col_st:col_st+BlkSize(2)-1);
+            imgOut(:,kk) = im_sub_Theta(:);
+            kk = kk + 1;
+        end
+    end
+    imgOut = imgOut(:,1:kk-1);
+end
+end
 
 % ------------------------------------------------------------------------
 
