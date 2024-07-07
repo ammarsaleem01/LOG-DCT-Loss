@@ -1,4 +1,4 @@
-The Folder is for verifying the performance of LOG-DCT-L2-LOSS
+The project is for verifying the performance of LOG-DCT-L2-LOSS over L2, L1 and DCT-L2 Loss fucntions
 **Train** file perfoms training using DnCNN with different Model losses
 NetChoice = 20 : DnCNN with L2 Loss
 NetChoice = 21 : DnCNN with L1 Loss
