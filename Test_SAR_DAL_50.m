@@ -27,7 +27,6 @@ end
 %% Define Test SAR Scene
 SARsceneNameTest = SARsceneNameTestTotal(SARcene_index);
 ImgRefTest = ReadDataSet(SARsceneNameTest);
-ImgRefTest_Rescaled = RescaleDataSet(ImgRefTest,ImgRefTest,RescaleFlag);
 % Validation Options for Forward model
 N1_Test = size(ImgRefTest,1);
 N2_Test = size(ImgRefTest,2);
@@ -55,7 +54,9 @@ nH_Valid = @(z)H(z,opts_Test); % The forward Fourier sampling operator
 nHH_Valid=@(z)HH(z,opts_Test); % The backward Fourier sampling operator
 
 [Patch_Img_In_Test,Patch_ImgOut_Test] = ConvertDataValid(...
-    ImgRefTest_Rescaled,nH_Valid,nHH_Valid,opts_Test);
+    ImgRefTest,nH_Valid,nHH_Valid,opts_Test);
+Patch_Img_In_Test = RescaleDataSet(Patch_Img_In_Test,ImgRefTest,RescaleFlag);
+Patch_ImgOut_Test = RescaleDataSet(Patch_ImgOut_Test,ImgRefTest,RescaleFlag);
 
 %% Read Network
 NetRow = 0;
