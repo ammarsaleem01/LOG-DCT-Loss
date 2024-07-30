@@ -1,4 +1,6 @@
 %% Define variable that can be changed
+DataAvailability = 50; % Experiments for only 50% Data Availability
+NoiseLevel = 10^5; % 0.03
 N2XFlag = 0; % 0: Noise-2-Noise, 1:Noise-2-Clean
 SARcene_index = 1; % Select SAR scene index
 % 1: "KapikuleTurkeySE",
@@ -13,8 +15,6 @@ VerboseFlag = 1; % Writes Calcualted parameters on command window
 addpath(genpath(fullfile(cd,'Utility')))
 % 0:Nochange, 1:0-to-1
 RescaleFlag = 1;
-DataAvailability = 50; % Experiments for only 50% Data Availability
-NoiseLevel = 0.03; % 0.03
 switch N2XFlag
     case 0
         N2Xtext = 'N2N';
