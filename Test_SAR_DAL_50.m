@@ -1,13 +1,43 @@
-%% Define variable that can be changed
-DataAvailability = 50; % Experiments for only 50% Data Availability
-NoiseLevel = 10^4; % 0.03
-N2XFlag = 0; % 0: Noise-2-Noise, 1:Noise-2-Clean
-SARcene_index = 1; % Select SAR scene index
 % 1: "KapikuleTurkeySE",
 % 2: "CordobaSpainSE",
 % 3: "RichmondUSASE",
 % 4: "ShahrudIranSE"
+SARcene_index = 1; % Select SAR scene index
 % ------------------------------------------------------------------------
+%% Define variable that can be changed
+switch DatasetChoice
+    case 7
+        DataAvailability = 50;
+        dNL = 10e4;
+        NoiseLevelT = 10e3;%dNL;%10e3;%dNL;% Multiple of Sigma
+    case 8
+        DataAvailability = 25;
+        dNL = 1e3;
+        NoiseLevelT = 1e3;%dNL;%10e3;%dNL;% Multiple of Sigma
+    case 9
+        DataAvailability = 10;
+        dNL = 1e3;
+        NoiseLevelT = 1e3;%dNL;%10e3;%dNL;% Multiple of Sigma
+    case 10
+        DataAvailability = 75;
+        dNL = 1e4;
+        NoiseLevelT = 10e3;%dNL;%10e3;%dNL;% Multiple of Sigma
+    case 11
+        DataAvailability = 100;
+        dNL = 20e4;
+        NoiseLevelT = 10e3;%dNL;%10e3;%dNL;% Multiple of Sigma
+    otherwise
+        bDAL = [100 75 50 25 10];
+        dNL = [1e3,1e4];
+        NoiseLevelT = 10e3;%dNL;%10e3;%dNL;% Multiple of Sigma
+end
+DataAvailability = 50; % Experiments for only 50% Data Availability
+switch DataAvailability
+   case 100
+NoiseLevel = 10^4; % 0.03
+N2XFlag = 1; % 0: Noise-to-Noise, 1:Noise-to-Clean
+
+
 SARsceneNameTestTotal = ["KapikuleTurkeySE","CordobaSpainSE","RichmondUSASE","ShahrudIranSE"];
 DispFlag = 1; % Display Figures of specifie SAR Scene
 VerboseFlag = 1; % Writes Calcualted parameters on command window
