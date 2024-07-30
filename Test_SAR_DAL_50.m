@@ -10,7 +10,7 @@ SARsceneNameTestTotal = ["KapikuleTurkeySE","CordobaSpainSE","RichmondUSASE","Sh
 DispFlag = 1; % Display Figures of specifie SAR Scene
 VerboseFlag = 1; % Writes Calcualted parameters on command window
 %% Load Trained File
-% addpath(genpath(fullfile(cd,'Utility')))
+addpath(genpath(fullfile(cd,'Utility')))
 % 0:Nochange, 1:0-to-1
 RescaleFlag = 1;
 DataAvailability = 50; % Experiments for only 50% Data Availability
