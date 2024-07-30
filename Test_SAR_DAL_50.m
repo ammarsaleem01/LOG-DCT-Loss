@@ -1,6 +1,6 @@
 %% Define variable that can be changed
 DataAvailability = 50; % Experiments for only 50% Data Availability
-NoiseLevel = 10^5; % 0.03
+NoiseLevel = 10^4; % 0.03
 N2XFlag = 0; % 0: Noise-2-Noise, 1:Noise-2-Clean
 SARcene_index = 1; % Select SAR scene index
 % 1: "KapikuleTurkeySE",
@@ -166,8 +166,7 @@ end
 % ------------------------------------------------------------------------
 %% Forward Model
 function [ImgConv,ImgFRef] = ForwardModelPE(ImgRef,nH,nHH,opts)
-ImgFRef_Rescale = RescaleDataSet(ImgRef,ImgRef,opts.RescaleFlag);
-ImgFRef = addphase(ImgFRef_Rescale);                                            % Adding complex valued uniform Random phase to magnitude of RF
+ImgFRef = addphase(ImgRef);                                            % Adding complex valued uniform Random phase to magnitude of RF
 g = nH(ImgFRef);                                                           % Clean and full DAL Phase histories (PH)
 optsNoise.type = opts.type;                                                % Noise distribution type
 optsNoise.NoiseSigma = opts.NoiseSigma;                                    % Setting NL to option
@@ -176,8 +175,7 @@ gn = AddNoise(g,optsNoise);                                                 % Ad
 f_conv = reshape(nHH(gn),opts.N1,opts.N2);                                  % Conventional Reconstruction (CR)
 f_conv_abs = abs(f_conv);
 f_conv_ang = atan2(imag(f_conv),real(f_conv));
-f_conv_abs_resc = RescaleDataSet(f_conv_abs,ImgFRef_Rescale,opts.RescaleFlag);
-ImgConv = f_conv_abs_resc.*exp(1i*f_conv_ang);
+ImgConv = f_conv_abs_resc.*exp(1i*f_conv_abs);
 end
 % ------------------------------------------------------------------------
 %% Read data from SAR image and convert to patches to make dataset with Forwared model
