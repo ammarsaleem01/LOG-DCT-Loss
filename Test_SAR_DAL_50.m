@@ -1,44 +1,48 @@
+%% Define SAR Scene to generate results according to article
+% 0: Noise-2-Noise, 1:Noise-2-Clean
+N2XFlag = 1; 
+
 % 1: "KapikuleTurkeySE",
 % 2: "CordobaSpainSE",
 % 3: "RichmondUSASE",
 % 4: "ShahrudIranSE"
+% 5: "WonsanNorthKoreaSE"
 SARcene_index = 1; % Select SAR scene index
+
 % ------------------------------------------------------------------------
-%% Define variable that can be changed
-switch DatasetChoice
-    case 7
+SARsceneNameTestTotal = ["KapikuleTurkeySE","CordobaSpainSE",...
+    "RichmondUSASE","ShahrudIranSE","WonsanNorthKoreaSE"];
+
+NetNamesDnCNN_MDRUnet = ["Standard_DnCNN_Lyr_20_0","DnCNN_Lyr_20_MAE_1",...
+            "DnCNN_DCT_Net_24","DnCNN_DCT_LOG_Net_25",...
+            "MRDU_Net_50","MRDU_Net_MAE_23",...
+            "MDRUnet_DCT_Net_74","MDRUnet_DCT_LOG_Net_75"];
+
+switch SARcene_index
+    case 2%CordobaSpainSE
         DataAvailability = 50;
-        dNL = 10e4;
+        NoiseLevel = 10e4;
         NoiseLevelT = 10e3;%dNL;%10e3;%dNL;% Multiple of Sigma
-    case 8
+    case 1%KapikuleTurkeySE
         DataAvailability = 25;
-        dNL = 1e3;
+        NoiseLevel = 1e3;
         NoiseLevelT = 1e3;%dNL;%10e3;%dNL;% Multiple of Sigma
-    case 9
+    case 3%RichmondUSASE
         DataAvailability = 10;
-        dNL = 1e3;
+        NoiseLevel = 1e3;
         NoiseLevelT = 1e3;%dNL;%10e3;%dNL;% Multiple of Sigma
-    case 10
+    case 4%ShahrudIranSE
         DataAvailability = 75;
-        dNL = 1e4;
+        NoiseLevel = 1e4;
         NoiseLevelT = 10e3;%dNL;%10e3;%dNL;% Multiple of Sigma
-    case 11
+    case 5%WonsanNorthKoreaSE
         DataAvailability = 100;
-        dNL = 20e4;
+        NoiseLevel = 20e4;
         NoiseLevelT = 10e3;%dNL;%10e3;%dNL;% Multiple of Sigma
     otherwise
-        bDAL = [100 75 50 25 10];
-        dNL = [1e3,1e4];
-        NoiseLevelT = 10e3;%dNL;%10e3;%dNL;% Multiple of Sigma
+        error('Not a valid dataset choice')
 end
-DataAvailability = 50; % Experiments for only 50% Data Availability
-switch DataAvailability
-   case 100
-NoiseLevel = 10^4; % 0.03
-N2XFlag = 1; % 0: Noise-to-Noise, 1:Noise-to-Clean
 
-
-SARsceneNameTestTotal = ["KapikuleTurkeySE","CordobaSpainSE","RichmondUSASE","ShahrudIranSE"];
 DispFlag = 1; % Display Figures of specifie SAR Scene
 VerboseFlag = 1; % Writes Calcualted parameters on command window
 %% Load Trained File
@@ -46,15 +50,12 @@ addpath(genpath(fullfile(cd,'Utility')))
 % 0:Nochange, 1:0-to-1
 RescaleFlag = 1;
 switch N2XFlag
-    case 0
-        N2Xtext = 'N2N';
-    case 1
-        N2Xtext = 'N2C';
-    otherwise
-        error('N2XFlag = 0,1');
+    case 0, N2Xtext = 'N2N';
+    case 1, N2Xtext = 'N2C';
+    otherwise, error('N2XFlag = 0,1');
 end
 
-%% Define Test SAR Scene
+%% Read Test SAR Scene
 SARsceneNameTest = SARsceneNameTestTotal(SARcene_index);
 ImgRefTest = ReadDataSet(SARsceneNameTest);
 % Validation Options for Forward model
@@ -89,26 +90,20 @@ Patch_Img_In_Test = RescaleDataSet(Patch_Img_In_Test,ImgRefTest,RescaleFlag);
 Patch_ImgOut_Test = RescaleDataSet(Patch_ImgOut_Test,ImgRefTest,RescaleFlag);
 
 %% Read Network
-NetRow = 0;
-for NetCoice_i = [0 1 4 5]+20% [20;30;50;60]
-    NetRow = NetRow + 1;
-    NetChoice = NetCoice_i;%[0 1 4 5]+30% [20;30;50;60]
+for NetCoice_i = 1:length(NetNamesDnCNN_MDRUnet)
     reset(gpuDevice())
-    if floor(NetCoice_i/10)==2
-        MiniBatchSize = 40;
-    end
-    if floor(NetCoice_i/10)==5
-        MiniBatchSize = 15;
-    end
-    NetName = DefineNetName(NetChoice);
-    FileNameTrain = sprintf([NetName,'_256x256_WonsanNorthKoreaSE_SAR_',...
-        N2Xtext,'_NL_0_DAL_50_AngleAug_Rescale_0_1_Net_',num2str(NetChoice),...
-        '_mBz_',num2str(MiniBatchSize),'_mEp_10.mat']);
+    NetName = char(NetNamesDnCNN_MDRUnet(NetCoice_i));
+    FileNameTrain = ['NetworkMod_256px256p_UCMerced_LandUse_SAR_N2C_DAL_',...
+        num2str(DataAvailability),'_NL',num2str(NoiseLevelT/1e3),'_e3_Rescaled_AngleAugment__',...
+        NetName,'_mBz_10_it_10_ImgStrech.mat'];
     load(fullfile(cd,'TrainedNetworks',FileNameTrain));
     %% Calculate Performance on Valdation Data
     YPred_XTest = activations(trainedNet,...
-        Patch_Img_In_Test,'AdditionResdiual','OutputAs','channels',...
+        Patch_Img_In_Test,trainedNet.Layers(end-1).Name,'OutputAs','channels',...
         'ExecutionEnvironment','multi-gpu');
+    if ResidualFlag == 1
+        YPred_XTest = YPred_XTest + Patch_Img_In_Test;
+    end
     %% Calculate Parameters
     [snrYPred_XV,psnrYPred_XV,ssimYPred_XV] = ...
         P_SNR_SSIM_Calculate(YPred_XTest,Patch_ImgOut_Test);
@@ -118,10 +113,11 @@ for NetCoice_i = [0 1 4 5]+20% [20;30;50;60]
     if DispFlag == 1
         figure(1);imagesc(Patch_ImgOut_Test);colormap gray;colorbar;drawnow;
         figure(2);imagesc(Patch_Img_In_Test);colormap gray;colorbar;drawnow;
-        figure(NetRow+2);imagesc(YPred_XTest);colormap gray;colorbar;drawnow;
+        figure(NetCoice_i+2);imagesc(YPred_XTest);colormap gray;colorbar;drawnow;
     end
     DataPerf = [snrYPred_XV,psnrYPred_XV,ssimYPred_XV,snrXTest,psnrXTest,ssimXTest];
     if VerboseFlag == 1
+        disp(NetName)
         disp(['snrPred',' , ','psnrPred',' , ','ssimPred',' , ',...
             'snrConvIn',' , ','psnrConvIn',' , ','ssimConvIn']);
         disp(mean(DataPerf,1))
@@ -205,7 +201,7 @@ gn = AddNoise(g,optsNoise);                                                 % Ad
 f_conv = reshape(nHH(gn),opts.N1,opts.N2);                                  % Conventional Reconstruction (CR)
 f_conv_abs = abs(f_conv);
 f_conv_ang = atan2(imag(f_conv),real(f_conv));
-ImgConv = f_conv_abs_resc.*exp(1i*f_conv_abs);
+ImgConv = f_conv_abs.*exp(1i*f_conv_ang);
 end
 % ------------------------------------------------------------------------
 %% Read data from SAR image and convert to patches to make dataset with Forwared model
@@ -513,26 +509,7 @@ switch optsNoise.type
         error('wrong noise option')
 end
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+% ------------------------------------------------------------------------
 
 
 
